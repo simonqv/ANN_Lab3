@@ -108,9 +108,6 @@ def task3_1():
     print("True pattern x1 we tried to find", x1)
 
 
-
-
-
 def task3_2():
     # patterns_array = [p1, p2, ..., p9]
     patterns_array = read_pict_data()
