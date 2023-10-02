@@ -60,11 +60,11 @@ def task3_1():
                 loops_needed[i] = loop
                 break
             if loop > 3: # log(8) < 3 so should be enough to see stable point
-                loops_needed[i] = "didn't converge"
+                loops_needed[i] = "didn't converge to stored"
                 break
             loop += 1
 
-    print(loops_needed)
+    print("Does the distorted patterns converge to stored ones? In how long?\n", loops_needed)
 
 
     # See how many attractors there are in this network
@@ -74,6 +74,34 @@ def task3_1():
     X_all = np.empty((256, 8))
     for i in range(256):
         X_all[i] = np.array(list(format(i, '08b')), dtype=int)*2 -1
+
+    # find attractors
+    stable_states = np.empty((256,8))
+    
+    for i, row in enumerate(X_all):
+        loop = 0
+        recall = update_rule(row, W)
+        while(loop < 3):
+            recall = update_rule(recall,W)
+            loop += 1
+        stable_state = recall
+        stable_states[i] = stable_state
+    stable_states = np.unique(stable_states, axis=0)
+      
+    print("\nNumber of stable states/attractors", len(stable_states))
+
+
+    # Make the starting pattern more dissimilar, 
+    # more than half wrong
+    x1_big_distortion = np.array([-1, -1, 1, 1, 1, 1, -1, -1])
+    recall = update_rule(x1_big_distortion, W)
+    for i in range(5):
+        recall = update_rule(recall, W)
+    print("\nThe distorted pattern\t\t", x1_big_distortion)
+    print("Recall after big distortion\t", recall[:])
+    print("True pattern x1 we tried to find", x1)
+
+
 
 
 
