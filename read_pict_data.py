@@ -19,7 +19,6 @@ def read_pict_data():
     for element in data_list[0].split(','):
         data.append(int(element))
 
-    print(data)        
     # Reshape the data into 9 NumPy arrays with shape 32x32
     num_arrays = 9
     array_shape = (32, 32)
@@ -30,3 +29,5 @@ def read_pict_data():
         end_idx = (i + 1) * array_shape[0] * array_shape[1]
         numpy_arrays.append(np.array(data[start_idx:end_idx]).reshape(array_shape))
         print(numpy_arrays[i].shape)
+
+    return numpy_arrays
