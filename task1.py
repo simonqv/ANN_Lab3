@@ -20,17 +20,26 @@ def calc_weight(input_patterns):
 
 
 def update_rule(pattern, weight_matrix):
-    max_iters = 2
     updated_pattern = pattern.copy()
-    for _ in range(max_iters):
-        for i, w_row in enumerate(weight_matrix):
-            # Compute the weighted sum of inputs
-            weighted_sum = np.dot(w_row, updated_pattern)
-            if weighted_sum >= 0:
-                updated_pattern[i] = 1
-            else:
-                updated_pattern[i] = -1
+    for i, w_row in enumerate(weight_matrix):
+        # Compute the weighted sum of inputs
+        weighted_sum = np.dot(w_row, updated_pattern)
+        if weighted_sum >= 0:
+            updated_pattern[i] = 1
+        else:
+            updated_pattern[i] = -1
     return updated_pattern
+
+
+def degrade_patterns(pattern1, pattern2_3):
+    rand_ints = np.random.randint(0, 1024, 200)
+    print(pattern2_3.shape)
+    for i in rand_ints:
+        pattern1[i] = 1
+    
+    pattern11 = np.append(pattern2_3[0][:512], pattern2_3[1][512:])
+    print(pattern11.shape, "p11 shape")
+    return pattern1, pattern11
 
 
 def test():
@@ -105,7 +114,7 @@ def task3_1():
     # more than half wrong
     x1_big_distortion = np.array([-1, -1, 1, 1, 1, 1, -1, -1])
     recall = update_rule(x1_big_distortion, W)
-    for i in range(5):
+    for i in range(3):
         recall = update_rule(recall, W)
     print("\nThe distorted pattern\t\t", x1_big_distortion)
     print("Recall after big distortion\t", recall[:])
@@ -126,27 +135,46 @@ def task3_2():
     p1 = patterns_array[0] # (1024,)
     p2 = patterns_array[1]
     p3 = patterns_array[2]
+    p10 = patterns_array[0].copy() # to be degraded p1
+    p11 = np.array([patterns_array[1].copy(), patterns_array[2].copy()]) # to be mixture of p2 and p3
 
     # train on p1, p2, p3
     x_patterns = np.array([p1, p2, p3])
 
     weight_matrix = calc_weight(x_patterns)
-    print("W res", weight_matrix.shape)
-
     # check that the three patterns are stable.
     for i, x in enumerate(x_patterns):
         recall = update_rule(x, weight_matrix)     
 
         wrong_elements = 0
-        print(recall.shape, x.shape)
         for elem in recall == x:
             if elem == False:
                 wrong_elements+=1
         print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
 
+    # point 2: test if we can complete a degraded pattern (p10 for p1)
+    # allow 7 tries to find attractor since log(1024) ~ 6,9
+    p10, p11 = degrade_patterns(p10, p11)
+    recall = update_rule(p10, weight_matrix)
+    for i in range(6):
+        recall = update_rule(recall, weight_matrix)
+    if np.array_equal(recall, p1):
+        print("Found p1 from p10\n")
+    else:
+        print("Could NOT find p1 from p10\n")
 
-    # print(type(x[30][17]), type(recall.reshape((32,32))[30][17]))
-    # print(x[30][17], recall.reshape((32,32))[30][17])
+    recall = update_rule(p11, weight_matrix)
+    for i in range(6):
+        recall = update_rule(recall, weight_matrix)
+    if np.array_equal(recall, p2):
+        print("Could find p2 from p11")
+    elif np.array_equal(recall, p3):
+        print("Could find p3 from p11")
+    else:
+        print("Found neither p2 nor p3 from p11")
+
+
+
 
 
 def task3_3():

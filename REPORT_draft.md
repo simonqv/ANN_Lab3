@@ -6,3 +6,9 @@
 - We found 14 attractors in the network of 256 possible patterns. 
 
 - When we change half of the pattern we cannot recall the original matrix. E.g. when trying to find x1 from `[-1  1  1  1  1  1 -1 -1]` we get `[-1 1 1 -1 -1 1 -1 1]` so 3 bits are still wrong. However, when we only distort 3 bits we get the correct pattern, at least in the example when x1 is distorted to `[-1 -1  1  1  1  1 -1 -1]`.
+
+
+### Task 3.2 Sequential Update
+- We found that the patterns are stable by having no mismatches when comparing the pattern we trained on with the output we get when trying to recall that same pattern. 
+
+- For p10 we set 200 random elements to 1 to degrade the pattern p1. 
