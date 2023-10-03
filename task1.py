@@ -1,31 +1,36 @@
 import numpy as np
 from read_pict_data import read_pict_data
 
-def calc_weight(input_patterns, pattern_is_matrix = True):
+def calc_weight(input_patterns):
     # no scaling by 1/N
-    if pattern_is_matrix == True:
-        W = np.zeros((len(input_patterns[0])**2, len(input_patterns[0])**2))
-        print("W shape", W.shape)
-    elif pattern_is_matrix == False:
-        W = np.zeros((len(input_patterns[0]), len(input_patterns[0])))
+    num_neurons = input_patterns[0].shape[0]    # 1024
+    weight_matrix = np.zeros((num_neurons, num_neurons))
 
+    for pattern_mu in input_patterns:
+        weight_matrix += np.outer(pattern_mu, pattern_mu)
+
+    '''
+    # no scaling by 1/N
+    
+    W = np.zeros((len(input_patterns[0]), len(input_patterns[0])))
     for mu in range(len(input_patterns)):
-        W += np.outer(input_patterns[mu].T, input_patterns[mu])
-        
-    return W
+        W += np.outer(input_patterns[mu].reshape((len(input_patterns[0]), 1)).T, input_patterns[mu])
+    '''
+    return weight_matrix
 
 
-def update_rule(pattern, W):
-    print("PATTERN.shape", pattern.shape)
-    recall = np.empty(pattern.shape, dtype=int)
-    for i, w_row in enumerate(W):
-        sum_wx = np.dot(w_row, pattern.T)
-        if sum_wx >= 0:
-            recall[i] = 1
-        else:
-            recall[i] = -1
-       
-    return recall
+def update_rule(pattern, weight_matrix):
+    max_iters = 2
+    updated_pattern = pattern.copy()
+    for _ in range(max_iters):
+        for i, w_row in enumerate(weight_matrix):
+            # Compute the weighted sum of inputs
+            weighted_sum = np.dot(w_row, updated_pattern)
+            if weighted_sum >= 0:
+                updated_pattern[i] = 1
+            else:
+                updated_pattern[i] = -1
+    return updated_pattern
 
 
 def test():
@@ -34,7 +39,7 @@ def test():
     x3 = np.array([-1, 1, 1, -1, -1, 1, -1, 1])
 
     X = np.array([x1, x2, x3])
-    W = calc_weight(X, pattern_is_matrix=False)
+    W = calc_weight(X)
     recall = update_rule(x3, W)
 
     return 0
@@ -46,7 +51,7 @@ def task3_1():
     x3 = np.array([-1, 1, 1, -1, -1, 1, -1, 1])
     X = np.array([x1, x2, x3])
 
-    W = calc_weight(X, pattern_is_matrix=False)
+    W = calc_weight(X)
 
     # distorted patterns to try and retrieve original X which we trained weights on
     x1d = np.array([1, -1, 1, -1, 1, -1, -1, 1])
@@ -86,37 +91,27 @@ def task3_1():
 def task3_2():
     # patterns_array = [p1, p2, ..., p9]
     patterns_array = read_pict_data()
-    #print(patterns_array)
-    p1 = patterns_array[0]
+    print(patterns_array)
+    p1 = patterns_array[0] # (1024,)
     p2 = patterns_array[1]
     p3 = patterns_array[2]
 
-    print("p1 shape", p1.shape)
     # train on p1, p2, p3
-    X = np.array([p1, p2, p3])
-    W = calc_weight(X)
-    print("W res", W.shape)
-    
+    x_patterns = np.array([p1, p2, p3])
+
+    weight_matrix = calc_weight(x_patterns)
+    print("W res", weight_matrix.shape)
+
     # check that the three patterns are stable.
-    number_of_updates = 5
-    for i, x in enumerate(X):
-        if i == 0:
-            j = 0
-            recall = x
-            while j < number_of_updates:
-                #print("x.shape", recall.flatten().shape, "W.shape", W.shape)
-                recall = update_rule(recall.flatten(), W)
-                j+=1
-            #print(recall.flatten())
-            #print(x[i])
-            
-            wrong_elements = 0
-            for elem in recall.reshape((32,32)) == x[i]:
-                for e in elem:
-                    if e == False:
-                        #print(e)
-                        wrong_elements+=1
-            print("WRONG ELEMENTS", wrong_elements)
+    for i, x in enumerate(x_patterns):
+        recall = update_rule(x, weight_matrix)     
+
+        wrong_elements = 0
+        print(recall.shape, x.shape)
+        for elem in recall == x:
+            if elem == False:
+                wrong_elements+=1
+        print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
 
             
         
@@ -129,9 +124,9 @@ def main():
     #test()
 
     # task 3.1 Convergence and attractors
-    #task3_1()
+    task3_1()
 
     # task 3.2 Sequential update
-    task3_2()
+    #task3_2()
 
 main()
