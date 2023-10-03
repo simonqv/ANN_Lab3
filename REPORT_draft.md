@@ -11,4 +11,4 @@
 ### Task 3.2 Sequential Update
 - We found that the patterns are stable by having no mismatches when comparing the pattern we trained on with the output we get when trying to recall that same pattern. 
 
-- For p10 we set 200 random elements to 1 to degrade the pattern p1. 
+- For p10 we set 200 random elements to 1 to degrade the pattern p1. To make a mixture of p2 and p3 to create p11 we take first 512 elements from p2 and last 512 elements from p3 and combine them. This results in p11 finding p3. If we change the ration to e.g. 800 first from p2 we recall p2 instead. We also manage to recall p1 from p10.
