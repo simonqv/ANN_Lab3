@@ -156,7 +156,7 @@ def task3_2():
     weight_matrix = calc_weight(x_patterns)
     print("W res", weight_matrix.shape)
 
-    # check that the three patterns are stable.
+    # point 1: check that the three patterns are stable
     max_iters = int(np.log(1024))
     for i, x in enumerate(x_patterns):
         if i == 0:
@@ -165,7 +165,7 @@ def task3_2():
         for _ in range(max_iters):
             recall = update_rule(recall, weight_matrix)   
         
-        # plot and count differences in the final recall pattern
+        # point 2: plot and count differences in the final recall pattern
         plot_pattern(x, recall)
         wrong_elements = 0
         print(recall.shape, x.shape)
@@ -173,6 +173,8 @@ def task3_2():
             if elem == False:
                 wrong_elements+=1
         print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
+
+        # point 3: TODO
 
 def task3_3():
     pass
