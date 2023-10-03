@@ -1,5 +1,30 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from read_pict_data import read_pict_data
+
+
+"""
+Takes in a pattern of shape (1024,), and plots it in a 32x32 colormap.
+"""
+def plot_pattern(x, recall):
+    # Create a figure and axis for visualization
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # Adjust the figsize as needed
+
+    # Display the original pattern using a binary colormap
+    x = x.reshape((32,32))
+    axes[0].imshow(x, cmap='binary')
+    axes[0].set_xticks([])
+    axes[0].set_yticks([])
+    axes[0].set_title("Original pattern")
+
+    # Display the recall pattern using a binary colormap
+    recall = recall.reshape((32,32))
+    axes[1].imshow(recall, cmap='binary')
+    axes[1].set_xticks([])
+    axes[1].set_yticks([])
+    axes[1].set_title("Recall pattern")
+
+    plt.show()
 
 def calc_weight(input_patterns):
     # no scaling by 1/N
@@ -142,10 +167,19 @@ def task3_2():
     x_patterns = np.array([p1, p2, p3])
 
     weight_matrix = calc_weight(x_patterns)
-    # check that the three patterns are stable.
-    for i, x in enumerate(x_patterns):
-        recall = update_rule(x, weight_matrix)     
 
+    # point 1: check that the three patterns are stable
+    max_iters = int(np.log(1024))
+
+    for i, x in enumerate(x_patterns):
+        if i == 0:
+            x = patterns_array[6]
+        recall = x.copy()
+        for _ in range(max_iters):
+            recall = update_rule(recall, weight_matrix)   
+        
+        # point 2: plot and count differences in the final recall pattern
+        plot_pattern(x, recall)
         wrong_elements = 0
         for elem in recall == x:
             if elem == False:
@@ -172,10 +206,6 @@ def task3_2():
         print("Could find p3 from p11")
     else:
         print("Found neither p2 nor p3 from p11")
-
-
-
-
 
 def task3_3():
     pass
