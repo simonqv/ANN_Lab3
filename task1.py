@@ -153,6 +153,22 @@ def task3_2():
     # print(x[30][17], recall.reshape((32,32))[30][17])
 
 
+def task3_3():
+    pass
+
+
+def task3_4():
+    pass
+
+
+def task3_5():
+    pass
+
+
+def task3_6():
+    pass
+
+
 def main(task):
 
     # test before starting (in section 2.2)
@@ -163,6 +179,16 @@ def main(task):
     elif task == 2:
         # task 3.2 Sequential update
         task3_2()
+
+    # TODO: everything below :p
+    elif task == 3:
+        task3_3()
+    elif task == 4:
+        task3_4()
+    elif task == 5:
+        task3_5()
+    elif task == 6:
+        task3_6()
 
 
 main(2)
