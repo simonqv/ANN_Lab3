@@ -1,5 +1,29 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from read_pict_data import read_pict_data
+
+"""
+Takes in a pattern of shape (1024,), and plots it in a 32x32 colormap.
+"""
+def plot_pattern(x, recall):
+    # Create a figure and axis for visualization
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # Adjust the figsize as needed
+    print("IN PLOT")
+    # Display the original pattern using a binary colormap
+    x = x.reshape((32,32))
+    axes[0].imshow(x, cmap='binary')
+    axes[0].set_xticks([])
+    axes[0].set_yticks([])
+    axes[0].set_title("Original pattern")
+
+    # Display the recall pattern using a binary colormap
+    recall = recall.reshape((32,32))
+    axes[1].imshow(recall, cmap='binary')
+    axes[1].set_xticks([])
+    axes[1].set_yticks([])
+    axes[1].set_title("Recall pattern")
+
+    plt.show()
 
 def calc_weight(input_patterns):
     # no scaling by 1/N
@@ -33,12 +57,10 @@ def update_rule(pattern, weight_matrix):
 
 def degrade_patterns(pattern1, pattern2_3):
     rand_ints = np.random.randint(0, 1024, 200)
-    print(pattern2_3.shape)
     for i in rand_ints:
         pattern1[i] = 1
     
     pattern11 = np.append(pattern2_3[0][:512], pattern2_3[1][512:])
-    print(pattern11.shape, "p11 shape")
     return pattern1, pattern11
 
 
@@ -131,7 +153,6 @@ def task3_2():
     # patterns_array = [p1, p2, ..., p9]
     patterns_array = read_pict_data()
 
-    print(patterns_array)
     p1 = patterns_array[0] # (1024,)
     p2 = patterns_array[1]
     p3 = patterns_array[2]
@@ -142,15 +163,25 @@ def task3_2():
     x_patterns = np.array([p1, p2, p3])
 
     weight_matrix = calc_weight(x_patterns)
-    # check that the three patterns are stable.
-    for i, x in enumerate(x_patterns):
-        recall = update_rule(x, weight_matrix)     
 
+    # point 1: check that the three patterns are stable
+    max_iters = int(np.log(1024))
+    for i, x in enumerate(x_patterns):
+        if i == 0:
+            x = patterns_array[6]
+        recall = x.copy()
+        for _ in range(max_iters):
+            recall = update_rule(recall, weight_matrix)   
+        
+        # plot and count differences in the final recall pattern
+        plot_pattern(x, recall)
         wrong_elements = 0
+        print(recall.shape, x.shape)
         for elem in recall == x:
             if elem == False:
                 wrong_elements+=1
         print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
+
 
     # point 2: test if we can complete a degraded pattern (p10 for p1)
     # allow 7 tries to find attractor since log(1024) ~ 6,9
@@ -173,6 +204,7 @@ def task3_2():
         print("Could find p3 from p11")
     else:
         print("Found neither p2 nor p3 from p11")
+    plot_pattern(p11, recall)
 
 
 
