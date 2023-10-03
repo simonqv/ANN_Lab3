@@ -27,6 +27,6 @@ def read_pict_data():
         start_idx = i * array_shape[0] 
         end_idx = (i + 1) * array_shape[0]
         numpy_arrays.append(np.array(data[start_idx:end_idx]).reshape(array_shape))
-        print(numpy_arrays[i].shape)
+        #print(numpy_arrays[i].shape)
 
     return numpy_arrays

@@ -8,13 +8,13 @@ Takes in a pattern of shape (1024,), and plots it in a 32x32 colormap.
 def plot_pattern(x, recall):
     # Create a figure and axis for visualization
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # Adjust the figsize as needed
-    print("IN PLOT")
+
     # Display the original pattern using a binary colormap
     x = x.reshape((32,32))
     axes[0].imshow(x, cmap='binary')
     axes[0].set_xticks([])
     axes[0].set_yticks([])
-    axes[0].set_title("Original pattern")
+    axes[0].set_title("Input pattern")
 
     # Display the recall pattern using a binary colormap
     recall = recall.reshape((32,32))
@@ -174,9 +174,8 @@ def task3_2():
             recall = update_rule(recall, weight_matrix)   
         
         # plot and count differences in the final recall pattern
-        plot_pattern(x, recall)
+        #plot_pattern(x, recall)
         wrong_elements = 0
-        print(recall.shape, x.shape)
         for elem in recall == x:
             if elem == False:
                 wrong_elements+=1
