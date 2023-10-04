@@ -1,3 +1,4 @@
+import copy
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,19 +31,17 @@ def plot_pattern(x, recall):
 def plot_async_update(partial_updates):
     fig, axes = plt.subplots(5, 4, figsize=(10, 5))
     for i, pu in enumerate(partial_updates):
-        print("PU", pu, i)
         axes[i%5, i%4].imshow(pu.reshape((32, 32)), cmap='binary')
         axes[i%5, i%4].set_xticks([])
         axes[i%5, i%4].set_yticks([])
         axes[i%5, i%4].set_title(f"Iteration nr: {i}")
-    plt.show()
+    #plt.show()
 
 
 def plot_energy(energy_list):
-    plt.figure(5)
-    x = np.arange(len(energy_list))
+    x = np.arange(0, 4000, 200)
     plt.plot(x, energy_list)
-    plt.show()
+    #plt.show()
 
 
 def calc_weight(input_patterns, normalize=False):
@@ -51,18 +50,11 @@ def calc_weight(input_patterns, normalize=False):
     weight_matrix = np.zeros((num_neurons, num_neurons))
 
     for pattern_mu in input_patterns:
-        weight_matrix += np.outer(pattern_mu, pattern_mu)
+        weight_matrix += np.outer(pattern_mu.T, pattern_mu)
 
-    '''
-    # no scaling by 1/N
-    
-    W = np.zeros((len(input_patterns[0]), len(input_patterns[0])))
-    for mu in range(len(input_patterns)):
-        W += np.outer(input_patterns[mu].reshape((len(input_patterns[0]), 1)).T, input_patterns[mu])
-    '''
     if normalize == True:
         weight_matrix = weight_matrix/num_neurons
-
+    
     return weight_matrix
 
 
@@ -76,7 +68,8 @@ def update_rule(pattern, weight_matrix):
 def update_rule_async(pattern, weight_matrix):
 
     updated_pattern = pattern.copy()
-    random_inds = np.random.randint(0, 1023, 400)
+    random_inds = np.random.randint(0, 1023, 4000)
+
     counter = 0
     partial_updates = []
     partial_energy = [0]
@@ -84,22 +77,15 @@ def update_rule_async(pattern, weight_matrix):
     for ind in random_inds:
         updated_pattern[ind] = np.sign(np.sum(weight_matrix[ind] * updated_pattern))
         updated_pattern[updated_pattern == 0] = 1
-        if counter%20 == 0:
-            partial_updates.append(updated_pattern)#.copy())
+        if counter%200 == 0:
+            partial_updates.append(updated_pattern.copy())
+            energy = calc_energy(weight_matrix, updated_pattern)
+            partial_energy.append(energy)
         counter += 1
-        energy = calc_energy(weight_matrix, updated_pattern)
-        partial_energy.append(energy)
 
-        if partial_energy[-2] == energy:
-            no_change += 1
-        if no_change > 50:
-            print(partial_updates)
-            print(counter, ind)
-            break
-    plot_async_update(partial_updates)
-    print(partial_energy)
-    plot_energy(partial_energy[1:])
-    return updated_pattern
+    #plot_async_update(partial_updates)
+    
+    return updated_pattern, partial_energy[1:]
 
 
 def degrade_patterns(pattern1, pattern2_3):
@@ -271,7 +257,7 @@ def task3_2():
     recall = p11.copy() # x.copy()    
 # for i, x in enumerate(x_patterns):
     # for _ in range(max_iters):
-    recall = update_rule_async(recall, weight_matrix)   
+    recall, _ = update_rule_async(recall, weight_matrix)   
         
     # plot and count differences in the final recall pattern
     # plot_pattern(x, recall)
@@ -295,7 +281,7 @@ def task3_3():
     x_patterns = np.array([p1, p2, p3])
     weight_mat = calc_weight(x_patterns, normalize=True)
     
-    # what is the energy at different attractors
+    # point 1 and 2 - what is the energy at different attractors
     energy_p1 = calc_energy(weight_mat, p1)
     print("\nEnergy at p1 \t", energy_p1)
     energy_p2 = calc_energy(weight_mat, p2)
@@ -307,8 +293,42 @@ def task3_3():
     print("Energy at p10 \t", energy_p10)
     energy_p11 = calc_energy(weight_mat, p11)
     print("Energy at p11 \t", energy_p11)
+    plt.show()
+    # point 3 - see how the energy changes:
+    _, energy_list = update_rule_async(p10, weight_mat)
+    plt.figure(31)
+    plt.title("Energy change over iterations 0-4000")#we update energy every 200 itr
+    plot_energy(energy_list)
+    plt.xlabel("Iteration in Sequential Learning")
+    plt.ylabel("Normalized Energy")
 
-    update_rule_async(p10, weight_mat)
+
+    # point 5 - symmetric random 
+    random_p = [np.random.normal(0, 1, 1024)]
+    random_w_mat_sym = calc_weight(random_p, True)
+    new_p_sym, energy_sym = update_rule_async(p1, random_w_mat_sym)
+    plt.figure(33)
+    plt.title("Energy Change with Random Symmetric Weights")
+    plot_energy(energy_sym)
+    plt.xlabel("Iteration in Sequential Learning")
+    plt.ylabel("Normalized Energy")
+ 
+
+
+    # point 4 - random weight matrix
+    # iterate random starting state (we try p1)
+    #shuffle the symmetric weight matrix
+    random_w_mat = copy.deepcopy(random_w_mat_sym)
+    np.random.shuffle(random_w_mat)
+
+    new_p, energy_rand = update_rule_async(p1, random_w_mat)
+    plt.figure(32)
+    plot_energy(energy_rand)
+    plt.title("Energy Change with Random Weights")
+    plt.xlabel("Iteration in Sequential Learning")
+    plt.ylabel("Normalized Energy")
+
+    plt.show()
 
 
 def task3_4():
