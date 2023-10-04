@@ -29,11 +29,15 @@ def plot_pattern(x, recall):
 
 def plot_async_update(partial_updates):
     fig, axes = plt.subplots(5, 4, figsize=(10, 5))
-    for i, pu in enumerate(partial_updates):
-        axes[i%5, i%4].imshow(pu.reshape((32, 32)), cmap='binary')
-        axes[i%5, i%4].set_xticks([])
-        axes[i%5, i%4].set_yticks([])
-        axes[i%5, i%4].set_title(f"Iteration nr: {i}")
+    ind=0
+    for i in range(5):
+        for j in range(4):
+            pu = partial_updates[ind]
+            axes[i%5, j%4].imshow(pu.reshape((32, 32)), cmap='binary')
+            axes[i%5, j%4].set_xticks([])
+            axes[i%5, j%4].set_yticks([])
+            axes[i%5, j%4].set_title(f"Iteration nr: {200*ind}")
+            ind+=1
     plt.show()
 
 
@@ -41,17 +45,8 @@ def calc_weight(input_patterns):
     # no scaling by 1/N
     num_neurons = input_patterns[0].shape[0]    # 1024
     weight_matrix = np.zeros((num_neurons, num_neurons))
-
     for pattern_mu in input_patterns:
         weight_matrix += np.outer(pattern_mu, pattern_mu)
-
-    '''
-    # no scaling by 1/N
-    
-    W = np.zeros((len(input_patterns[0]), len(input_patterns[0])))
-    for mu in range(len(input_patterns)):
-        W += np.outer(input_patterns[mu].reshape((len(input_patterns[0]), 1)).T, input_patterns[mu])
-    '''
     return weight_matrix
 
 
@@ -63,7 +58,6 @@ def update_rule(pattern, weight_matrix):
 
 
 def update_rule_async(pattern, weight_matrix):
-
     updated_pattern = pattern.copy()
     random_inds = [random.randint(0, 1023) for _ in range(4000)]
     counter = 0
