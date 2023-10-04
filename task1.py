@@ -2,6 +2,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from read_pict_data import read_pict_data
+import copy
 
 """
 Takes in a pattern of shape (1024,), and plots it in a 32x32 colormap.
@@ -82,12 +83,14 @@ def degrade_patterns(pattern1, pattern2_3):
 
 def flip_bits_in_pattern(number_of_flips, pattern):
     new_pattern = pattern.copy()
-    rand_ints = np.random.randint(0, 1024, number_of_flips)
-    print("LEN", len(rand_ints))
+    rand_ints = np.random.randint(0, len(pattern), number_of_flips)
     for i in rand_ints:
         new_pattern[i] = new_pattern[i]*(-1)
     return new_pattern
 
+def random_array(n=1024):
+    # Generate a random array of shape (n,) with values -1 or 1
+    return np.random.choice([-1, 1], size=n)
 
 def test():
     x1 = np.array([-1, -1, 1, -1, 1, -1, -1, 1])
@@ -306,34 +309,32 @@ def task3_5():
     # Add more and more memories to the network to see where the limit is.
     # Start by adding p4 into the weight matrix and check if moderately distorted patters can still be recognized.
     # Then continue by adding others such as p5, p6 and p7 in some order and checking the performance after each addition
+    random_flag = True
+    if random_flag == False:
+        patterns = read_pict_data()
 
-    patterns = read_pict_data()
+        p10 = copy.deepcopy(patterns[0]) # to be degraded p1
+        p11 = np.array([copy.deepcopy(patterns[1]), copy.deepcopy(patterns[2])])  # to be mixture of p2 and p3
+        p10, p11 = degrade_patterns(p10, p11)
 
-    p10 = patterns[0].copy()  # to be degraded p1
-    p11 = np.array([patterns[1].copy(), patterns[2].copy()])  # to be mixture of p2 and p3
-    p10, p11 = degrade_patterns(p10, p11)
+    elif random_flag == True:
+        patterns = []
+        for i in range(9):
+            patterns.append(random_array())
 
-    x_patterns = np.array([patterns[0], patterns[1], patterns[2], patterns[3]])
-    weight_matrix = calc_weight(x_patterns)
-    recall = update_rule_async(patterns[0], weight_matrix)
-    """
-    l = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    for end in range(1, len(l)):
+    for end in range(3, 10):
         print("\n----- new run -----\n")
-
-        x_patterns = np.array([patterns[l[i]].copy() for i in range(end)])
+        x_patterns = np.array([copy.deepcopy(patterns[i]) for i in range(end)])
         # x_patterns = [patterns[2], patterns[1], patterns[0], patterns[7]]
         weight_matrix = calc_weight(x_patterns)
 
         # point 1: check that the three patterns are stable
-        max_iters = 1 # int(4*np.log(1024))
+        max_iters = int(np.log(1024))
         for i, x in enumerate(x_patterns):
-            recall = x.copy()
+            recall = copy.deepcopy(x)
             for _ in range(max_iters):
                 recall = update_rule(recall, weight_matrix)
 
-            # plot and count differences in the final recall pattern
-            # plot_pattern(x, recall)
             wrong_elements = 0
             condition = recall == x
             for elem in condition:
@@ -341,7 +342,7 @@ def task3_5():
                     wrong_elements += 1
             print(f"p{i + 1} WRONG ELEMENTS", wrong_elements, "out of ", len(condition), "ratio: ", wrong_elements/len(condition))
 
-
+    """
         recall = update_rule(p10, weight_matrix)
         for i in range(6):
             recall = update_rule(recall, weight_matrix)
@@ -364,8 +365,49 @@ def task3_5():
         # plot_pattern(p11, recall)
     """
 
+def task3_5_random(noise_flag=True):
+    y_axis = []
+    x_axis= []
+
+    # generate 300 patterns of shape (200,)
+    number_of_patterns = 300
+    network_size = 100
+    patterns = []
+    for i in range(number_of_patterns):
+        patterns.append(random_array(network_size))
+
+    # calculate weights, recall and plot
+    for end in range(1, number_of_patterns+1):
+        print("\n----- new run -----\n")
+        x_patterns = np.array([copy.deepcopy(patterns[i]) for i in range(end)])
+        # x_patterns = [patterns[2], patterns[1], patterns[0], patterns[7]]
+        weight_matrix = calc_weight(x_patterns)
+        count = 0
+        # point 1: check that the three patterns are stable
+        max_iters = int(np.log(network_size))
+        for i, x in enumerate(x_patterns):
+            recall = copy.deepcopy(x)
+            if noise_flag == True:
+                recall = flip_bits_in_pattern(10, copy.deepcopy(x))
+            for _ in range(max_iters):
+                recall = update_rule(recall, weight_matrix)
+            if np.array_equal(recall, x):
+                count +=1
+        y_axis.append(count/len(x_patterns))
+    x_axis = np.array(range(1, number_of_patterns+1))
+    y_axis = np.array(y_axis)
+    plt.figure(1)
+    plt.plot(x_axis, y_axis)
+    plt.title("Memorization Hopfield network 100 nodes \n Random patterns")
+    plt.xlabel("Number of patterns")
+    plt.ylabel("Number of memorized patterns")
+    #plt.ylim([0,1.1])
+    
+    if noise_flag == True:
+        plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n 10% noise")
 
 
+    plt.show()
 
 def task3_6():
     pass
@@ -386,10 +428,11 @@ def main(task):
     elif task == 3:
         task3_3()
     elif task == 4:
-        task3_1()
         task3_4()
     elif task == 5:
         task3_5()
+        task3_5_random(noise_flag=False)
+        task3_5_random()
     elif task == 6:
         task3_6()
 
