@@ -76,9 +76,9 @@ def degrade_patterns(pattern1, pattern2_3):
     rand_ints = np.random.randint(0, 1024, 200)
     for i in rand_ints:
         pattern1[i] = 1
-    
     pattern11 = np.append(pattern2_3[0][:450], pattern2_3[1][450:]) # was 512. Dependig on majority, one side "wins" if too similar, a random local minima wins
     return pattern1, pattern11
+
 
 def flip_bits_in_pattern(number_of_flips, pattern):
     new_pattern = pattern.copy()
@@ -249,10 +249,9 @@ def task3_2():
     print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
 
 
-    
-
 def task3_3():
     pass
+
 
 def task3_4():
     # distortion resistance
@@ -302,8 +301,64 @@ def task3_4():
         plt.title(f"Attractor")
     plt.show()
 
+
 def task3_5():
+    # Add more and more memories to the network to see where the limit is.
+    # Start by adding p4 into the weight matrix and check if moderately distorted patters can still be recognized.
+    # Then continue by adding others such as p5, p6 and p7 in some order and checking the performance after each addition
+
+    patterns = read_pict_data()
+
+    p10 = patterns[0].copy()  # to be degraded p1
+    p11 = np.array([patterns[1].copy(), patterns[2].copy()])  # to be mixture of p2 and p3
+    p10, p11 = degrade_patterns(p10, p11)
+
+    for end in range(3, 10):
+        print("\n----- new run -----\n")
+
+        x_patterns = np.array([patterns[i] for i in range(end)])
+
+        weight_matrix = calc_weight(x_patterns.copy())
+
+        # point 1: check that the three patterns are stable
+        max_iters = int(np.log(1024))
+        for i, x in enumerate(x_patterns):
+            recall = x.copy()
+            for _ in range(max_iters):
+                recall = update_rule(recall.copy(), weight_matrix)
+
+            # plot and count differences in the final recall pattern
+            # plot_pattern(x, recall)
+            wrong_elements = 0
+            condition = recall == x
+            for elem in condition:
+                if not elem:
+                    wrong_elements += 1
+            print(f"p{i + 1} WRONG ELEMENTS", wrong_elements, "out of ", len(condition), "ratio: ", wrong_elements/len(condition))
+
+
+        recall = update_rule(p10, weight_matrix)
+        for i in range(6):
+            recall = update_rule(recall, weight_matrix)
+        if np.array_equal(recall, patterns[0]):
+            print("Found p1 from p10\n")
+        else:
+            print("Could NOT find p1 from p10\n")
+        # plot_pattern(p10, recall)
+
+        recall = update_rule(p11, weight_matrix)
+        # Dependig on majority, one side "wins" if too similar, a random local minima wins
+        for i in range(6):
+            recall = update_rule(recall, weight_matrix)
+        if np.array_equal(recall, patterns[1]):
+            print("Could find p2 from p11")
+        elif np.array_equal(recall, patterns[2]):
+            print("Could find p3 from p11")
+        else:
+            print("Found neither p2 nor p3 from p11")
+        # plot_pattern(p11, recall)
     pass
+
 
 def task3_6():
     pass
@@ -332,4 +387,4 @@ def main(task):
         task3_6()
 
 
-main(4)
+main(5)
