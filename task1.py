@@ -313,19 +313,24 @@ def task3_5():
     p11 = np.array([patterns[1].copy(), patterns[2].copy()])  # to be mixture of p2 and p3
     p10, p11 = degrade_patterns(p10, p11)
 
-    for end in range(3, 10):
+    x_patterns = np.array([patterns[0], patterns[1], patterns[2], patterns[3]])
+    weight_matrix = calc_weight(x_patterns)
+    recall = update_rule_async(patterns[0], weight_matrix)
+    """
+    l = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    for end in range(1, len(l)):
         print("\n----- new run -----\n")
 
-        x_patterns = np.array([patterns[i] for i in range(end)])
-
-        weight_matrix = calc_weight(x_patterns.copy())
+        x_patterns = np.array([patterns[l[i]].copy() for i in range(end)])
+        # x_patterns = [patterns[2], patterns[1], patterns[0], patterns[7]]
+        weight_matrix = calc_weight(x_patterns)
 
         # point 1: check that the three patterns are stable
-        max_iters = int(np.log(1024))
+        max_iters = 1 # int(4*np.log(1024))
         for i, x in enumerate(x_patterns):
             recall = x.copy()
             for _ in range(max_iters):
-                recall = update_rule(recall.copy(), weight_matrix)
+                recall = update_rule(recall, weight_matrix)
 
             # plot and count differences in the final recall pattern
             # plot_pattern(x, recall)
@@ -344,7 +349,7 @@ def task3_5():
             print("Found p1 from p10\n")
         else:
             print("Could NOT find p1 from p10\n")
-        # plot_pattern(p10, recall)
+        plot_pattern(p10, recall)
 
         recall = update_rule(p11, weight_matrix)
         # Dependig on majority, one side "wins" if too similar, a random local minima wins
@@ -357,7 +362,9 @@ def task3_5():
         else:
             print("Found neither p2 nor p3 from p11")
         # plot_pattern(p11, recall)
-    pass
+    """
+
+
 
 
 def task3_6():
