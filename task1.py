@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 from read_pict_data import read_pict_data
@@ -8,7 +9,7 @@ Takes in a pattern of shape (1024,), and plots it in a 32x32 colormap.
 def plot_pattern(x, recall):
     # Create a figure and axis for visualization
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # Adjust the figsize as needed
-
+    
     # Display the original pattern using a binary colormap
     x = x.reshape((32,32))
     axes[0].imshow(x, cmap='binary')
@@ -24,6 +25,17 @@ def plot_pattern(x, recall):
     axes[1].set_title("Recall pattern")
 
     plt.show()
+
+
+def plot_async_update(partial_updates):
+    fig, axes = plt.subplots(5, 4, figsize=(10, 5))
+    for i, pu in enumerate(partial_updates):
+        axes[i%5, i%4].imshow(pu.reshape((32, 32)), cmap='binary')
+        axes[i%5, i%4].set_xticks([])
+        axes[i%5, i%4].set_yticks([])
+        axes[i%5, i%4].set_title(f"Iteration nr: {i}")
+    plt.show()
+
 
 def calc_weight(input_patterns):
     # no scaling by 1/N
@@ -45,13 +57,24 @@ def calc_weight(input_patterns):
 
 def update_rule(pattern, weight_matrix):
     updated_pattern = pattern.copy()
-    for i, w_row in enumerate(weight_matrix):
-        # Compute the weighted sum of inputs
-        weighted_sum = np.dot(w_row, updated_pattern)
-        if weighted_sum >= 0:
-            updated_pattern[i] = 1
-        else:
-            updated_pattern[i] = -1
+    updated_pattern = np.sign(np.dot(weight_matrix, updated_pattern))
+    updated_pattern[updated_pattern == 0] = 1
+    return updated_pattern.astype(int)
+
+
+def update_rule_async(pattern, weight_matrix):
+
+    updated_pattern = pattern.copy()
+    random_inds = [random.randint(0, 1023) for _ in range(4000)]
+    counter = 0
+    partial_updates = []
+    for ind in random_inds:
+        updated_pattern[ind] = np.sign(np.sum(weight_matrix[ind] * updated_pattern))
+        updated_pattern[updated_pattern == 0] = 1
+        if counter%200 == 0:
+            partial_updates.append(updated_pattern.copy())
+        counter += 1
+    plot_async_update(partial_updates)
     return updated_pattern
 
 
@@ -60,7 +83,7 @@ def degrade_patterns(pattern1, pattern2_3):
     for i in rand_ints:
         pattern1[i] = 1
     
-    pattern11 = np.append(pattern2_3[0][:512], pattern2_3[1][512:])
+    pattern11 = np.append(pattern2_3[0][:450], pattern2_3[1][450:]) # was 512. Dependig on majority, one side "wins" if too similar, a random local minima wins
     return pattern1, pattern11
 
 
@@ -174,7 +197,7 @@ def task3_2():
             recall = update_rule(recall, weight_matrix)   
         
         # plot and count differences in the final recall pattern
-        #plot_pattern(x, recall)
+        # plot_pattern(x, recall)
         wrong_elements = 0
         for elem in recall == x:
             if elem == False:
@@ -192,9 +215,10 @@ def task3_2():
         print("Found p1 from p10\n")
     else:
         print("Could NOT find p1 from p10\n")
-    plot_pattern(p10, recall)
+    # plot_pattern(p10, recall)
 
     recall = update_rule(p11, weight_matrix)
+    # Dependig on majority, one side "wins" if too similar, a random local minima wins
     for i in range(6):
         recall = update_rule(recall, weight_matrix)
     if np.array_equal(recall, p2):
@@ -203,11 +227,27 @@ def task3_2():
         print("Could find p3 from p11")
     else:
         print("Found neither p2 nor p3 from p11")
-    plot_pattern(p11, recall)
+    # plot_pattern(p11, recall)
+
+    
+    # point 3: Randomly select units. 
+
+    #for i, x in enumerate(x_patterns):
+    recall = p11.copy() # x.copy()    
+# for i, x in enumerate(x_patterns):
+    # for _ in range(max_iters):
+    recall = update_rule_async(recall, weight_matrix)   
+        
+    # plot and count differences in the final recall pattern
+    # plot_pattern(x, recall)
+    wrong_elements = 0
+    for elem in recall == x:
+        if elem == False:
+            wrong_elements+=1
+    print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
 
 
-
-
+    
 
 def task3_3():
     pass
