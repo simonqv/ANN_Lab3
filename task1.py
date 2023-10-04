@@ -30,6 +30,7 @@ def plot_pattern(x, recall):
 def plot_async_update(partial_updates):
     fig, axes = plt.subplots(5, 4, figsize=(10, 5))
     for i, pu in enumerate(partial_updates):
+        print("PU", pu, i)
         axes[i%5, i%4].imshow(pu.reshape((32, 32)), cmap='binary')
         axes[i%5, i%4].set_xticks([])
         axes[i%5, i%4].set_yticks([])
@@ -37,7 +38,14 @@ def plot_async_update(partial_updates):
     plt.show()
 
 
-def calc_weight(input_patterns):
+def plot_energy(energy_list):
+    plt.figure(5)
+    x = np.arange(len(energy_list))
+    plt.plot(x, energy_list)
+    plt.show()
+
+
+def calc_weight(input_patterns, normalize=False):
     # no scaling by 1/N
     num_neurons = input_patterns[0].shape[0]    # 1024
     weight_matrix = np.zeros((num_neurons, num_neurons))
@@ -52,6 +60,9 @@ def calc_weight(input_patterns):
     for mu in range(len(input_patterns)):
         W += np.outer(input_patterns[mu].reshape((len(input_patterns[0]), 1)).T, input_patterns[mu])
     '''
+    if normalize == True:
+        weight_matrix = weight_matrix/num_neurons
+
     return weight_matrix
 
 
@@ -65,16 +76,29 @@ def update_rule(pattern, weight_matrix):
 def update_rule_async(pattern, weight_matrix):
 
     updated_pattern = pattern.copy()
-    random_inds = [random.randint(0, 1023) for _ in range(4000)]
+    random_inds = np.random.randint(0, 1023, 400)
     counter = 0
     partial_updates = []
+    partial_energy = [0]
+    no_change = 0
     for ind in random_inds:
         updated_pattern[ind] = np.sign(np.sum(weight_matrix[ind] * updated_pattern))
         updated_pattern[updated_pattern == 0] = 1
-        if counter%200 == 0:
-            partial_updates.append(updated_pattern.copy())
+        if counter%20 == 0:
+            partial_updates.append(updated_pattern)#.copy())
         counter += 1
+        energy = calc_energy(weight_matrix, updated_pattern)
+        partial_energy.append(energy)
+
+        if partial_energy[-2] == energy:
+            no_change += 1
+        if no_change > 50:
+            print(partial_updates)
+            print(counter, ind)
+            break
     plot_async_update(partial_updates)
+    print(partial_energy)
+    plot_energy(partial_energy[1:])
     return updated_pattern
 
 
@@ -85,6 +109,17 @@ def degrade_patterns(pattern1, pattern2_3):
     
     pattern11 = np.append(pattern2_3[0][:450], pattern2_3[1][450:]) # was 512. Dependig on majority, one side "wins" if too similar, a random local minima wins
     return pattern1, pattern11
+
+
+def calc_energy(weights, pattern):
+    energy = 0
+    for x_i in range(len(pattern)):
+        sum_i = 0
+        for x_j in range(len(pattern)):
+            sum_i += weights[x_i, x_j]* pattern[x_i] * pattern[x_j]
+        energy += sum_i
+    energy = -energy
+    return energy
 
 
 def test():
@@ -247,10 +282,34 @@ def task3_2():
     print(f"p{i+1} WRONG ELEMENTS", wrong_elements)
 
 
-    
-
 def task3_3():
-    pass
+    patterns_array = read_pict_data()
+    p1 = patterns_array[0] # (1024,)
+    p2 = patterns_array[1]
+    p3 = patterns_array[2]
+    p10 = patterns_array[0].copy() # to be degraded p1
+    p11 = np.array([patterns_array[1].copy(), patterns_array[2].copy()]) # to be mixture of p2 and p3
+    p10, p11 = degrade_patterns(p10, p11)
+    
+    # train on p1, p2, p3
+    x_patterns = np.array([p1, p2, p3])
+    weight_mat = calc_weight(x_patterns, normalize=True)
+    
+    # what is the energy at different attractors
+    energy_p1 = calc_energy(weight_mat, p1)
+    print("\nEnergy at p1 \t", energy_p1)
+    energy_p2 = calc_energy(weight_mat, p2)
+    print("Energy at p2 \t", energy_p2)
+    energy_p3 = calc_energy(weight_mat, p3)
+    print("Energy at p3 \t", energy_p3)
+    print()
+    energy_p10 = calc_energy(weight_mat, p10)
+    print("Energy at p10 \t", energy_p10)
+    energy_p11 = calc_energy(weight_mat, p11)
+    print("Energy at p11 \t", energy_p11)
+
+    update_rule_async(p10, weight_mat)
+
 
 def task3_4():
     pass
@@ -273,9 +332,10 @@ def main(task):
         # task 3.2 Sequential update
         task3_2()
 
-    # TODO: everything below :p
     elif task == 3:
         task3_3()
+
+    # TODO: everything below :p
     elif task == 4:
         task3_4()
     elif task == 5:
@@ -284,4 +344,4 @@ def main(task):
         task3_6()
 
 
-main(2)
+main(3)
