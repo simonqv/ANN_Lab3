@@ -30,13 +30,17 @@ def plot_pattern(x, recall):
 
 def plot_async_update(partial_updates):
     fig, axes = plt.subplots(5, 4, figsize=(10, 5))
-    for i, pu in enumerate(partial_updates):
-        axes[i%5, i%4].imshow(pu.reshape((32, 32)), cmap='binary')
-        axes[i%5, i%4].set_xticks([])
-        axes[i%5, i%4].set_yticks([])
-        axes[i%5, i%4].set_title(f"Iteration nr: {i}")
-    #plt.show()
-
+    
+    ind=0
+    for i in range(5):
+        for j in range(4):
+            pu = partial_updates[ind]
+            axes[i%5, j%4].imshow(pu.reshape((32, 32)), cmap='binary')
+            axes[i%5, j%4].set_xticks([])
+            axes[i%5, j%4].set_yticks([])
+            axes[i%5, j%4].set_title(f"Iteration nr: {200*ind}")
+            ind+=1
+    plt.show()
 
 def plot_energy(energy_list):
     x = np.arange(0, 4000, 200)
@@ -48,13 +52,14 @@ def calc_weight(input_patterns, normalize=False):
     # no scaling by 1/N
     num_neurons = input_patterns[0].shape[0]    # 1024
     weight_matrix = np.zeros((num_neurons, num_neurons))
-
     for pattern_mu in input_patterns:
+
         weight_matrix += np.outer(pattern_mu.T, pattern_mu)
 
     if normalize == True:
         weight_matrix = weight_matrix/num_neurons
     
+
     return weight_matrix
 
 
@@ -66,7 +71,6 @@ def update_rule(pattern, weight_matrix):
 
 
 def update_rule_async(pattern, weight_matrix):
-
     updated_pattern = pattern.copy()
     random_inds = np.random.randint(0, 1023, 4000)
 
@@ -95,6 +99,14 @@ def degrade_patterns(pattern1, pattern2_3):
     
     pattern11 = np.append(pattern2_3[0][:450], pattern2_3[1][450:]) # was 512. Dependig on majority, one side "wins" if too similar, a random local minima wins
     return pattern1, pattern11
+
+def flip_bits_in_pattern(number_of_flips, pattern):
+    new_pattern = pattern.copy()
+    rand_ints = np.random.randint(0, 1024, number_of_flips)
+    print("LEN", len(rand_ints))
+    for i in rand_ints:
+        new_pattern[i] = new_pattern[i]*(-1)
+    return new_pattern
 
 
 def calc_energy(weights, pattern):
@@ -191,7 +203,7 @@ def task3_1():
         print("", x2,"\n", state)
         print(np.array_equal(state, x2))
     """
-
+    
 
 def task3_2():
     # patterns_array = [p1, p2, ..., p9]
@@ -332,7 +344,52 @@ def task3_3():
 
 
 def task3_4():
-    pass
+    # distortion resistance
+
+    # patterns_array = [p1, p2, ..., p9]
+    patterns_array = read_pict_data()
+
+    p1 = patterns_array[0] # (1024,)
+    p2 = patterns_array[1]
+    p3 = patterns_array[2]
+    
+    # train on p1, p2, p3
+    x_patterns = np.array([p1, p2, p3])
+    weight_matrix = calc_weight(x_patterns)
+    number_of_units = len(p1)
+
+    max_iters = int(np.log(1024))
+
+    attractors = []
+    for pattern in x_patterns:
+        
+        for flip_fraction in range(0,110,10):
+            number_of_flips = int(number_of_units*flip_fraction/100)
+            recall = flip_bits_in_pattern(number_of_flips, pattern)
+            for iter in range(max_iters):
+                recall = update_rule(recall, weight_matrix)
+            attractors.append(recall.copy())
+            '''
+            plt.figure()
+            plt.imshow(recall.reshape((32,32)), cmap='binary')
+            plt.title(f"Flipped {number_of_flips} ({flip_fraction}%)")
+            print("LEN OF ATTRACTOR LIST", len(attractors))
+            '''
+        '''
+        plt.figure()
+        plt.imshow(pattern.reshape((32,32)), cmap='binary')
+        plt.title(f"Real pattern")
+        plt.show()
+        '''
+
+    unique_attractors = np.unique(np.array(attractors), axis=0)
+    print("LLELL", len(unique_attractors))
+    for fig_nr, attractor in enumerate(unique_attractors): 
+        print(len(attractor))
+        plt.figure()
+        plt.imshow(attractor.reshape((32,32)), cmap='binary')
+        plt.title(f"Attractor")
+    plt.show()
 
 def task3_5():
     pass
@@ -357,6 +414,7 @@ def main(task):
 
     # TODO: everything below :p
     elif task == 4:
+        task3_1()
         task3_4()
     elif task == 5:
         task3_5()
@@ -364,4 +422,6 @@ def main(task):
         task3_6()
 
 
-main(3)
+
+main(4)
+
