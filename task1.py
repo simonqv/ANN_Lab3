@@ -365,7 +365,7 @@ def task3_5():
         # plot_pattern(p11, recall)
     """
 
-def task3_5_random(noise_flag=True):
+def task3_5_random(noise_flag=True, remove_w_diagonal=False):
     y_axis = []
     x_axis= []
 
@@ -382,6 +382,11 @@ def task3_5_random(noise_flag=True):
         x_patterns = np.array([copy.deepcopy(patterns[i]) for i in range(end)])
         # x_patterns = [patterns[2], patterns[1], patterns[0], patterns[7]]
         weight_matrix = calc_weight(x_patterns)
+        if remove_w_diagonal == True:
+            # Find the indices of the diagonal elements
+            diag_indices = np.diag_indices_from(weight_matrix)
+            # Set the values of the diagonal elements to zero
+            np.put(weight_matrix, diag_indices, 0)
         count = 0
         # point 1: check that the three patterns are stable
         max_iters = int(np.log(network_size))
@@ -402,10 +407,11 @@ def task3_5_random(noise_flag=True):
     plt.xlabel("Number of patterns")
     plt.ylabel("Number of memorized patterns")
     #plt.ylim([0,1.1])
-    
+
     if noise_flag == True:
         plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n 10% noise")
-
+    if remove_w_diagonal == True:
+        plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n 10% noise \n no self-connections")
 
     plt.show()
 
@@ -433,6 +439,7 @@ def main(task):
         task3_5()
         task3_5_random(noise_flag=False)
         task3_5_random()
+        task3_5_random(remove_w_diagonal=True)
     elif task == 6:
         task3_6()
 
