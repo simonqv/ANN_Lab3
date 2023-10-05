@@ -92,6 +92,9 @@ def random_array(n=1024):
     # Generate a random array of shape (n,) with values -1 or 1
     return np.random.choice([-1, 1], size=n)
 
+def random_array_w_bias(n=100 ):
+    return np.sign(np.random.choice([-1, 1], size=n)+0.5)
+
 def test():
     x1 = np.array([-1, -1, 1, -1, 1, -1, -1, 1])
     x2 = np.array([-1, -1, -1, -1, -1, 1, -1, -1])
@@ -365,7 +368,7 @@ def task3_5():
         # plot_pattern(p11, recall)
     """
 
-def task3_5_random(noise_flag=True, remove_w_diagonal=False):
+def task3_5_random(noise_flag=True, remove_w_diagonal=False, bias=False):
     y_axis = []
     x_axis= []
 
@@ -373,8 +376,11 @@ def task3_5_random(noise_flag=True, remove_w_diagonal=False):
     number_of_patterns = 300
     network_size = 100
     patterns = []
-    for i in range(number_of_patterns):
-        patterns.append(random_array(network_size))
+    for i in range(number_of_patterns):    
+        if bias == True:
+            patterns.append(random_array_w_bias())
+        else:
+            patterns.append(random_array(network_size))
 
     # calculate weights, recall and plot
     for end in range(1, number_of_patterns+1):
@@ -401,7 +407,7 @@ def task3_5_random(noise_flag=True, remove_w_diagonal=False):
         y_axis.append(count/len(x_patterns))
     x_axis = np.array(range(1, number_of_patterns+1))
     y_axis = np.array(y_axis)
-    plt.figure(1)
+    plt.figure()
     plt.plot(x_axis, y_axis)
     plt.title("Memorization Hopfield network 100 nodes \n Random patterns")
     plt.xlabel("Number of patterns")
@@ -412,8 +418,9 @@ def task3_5_random(noise_flag=True, remove_w_diagonal=False):
         plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n 10% noise")
     if remove_w_diagonal == True:
         plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n 10% noise \n no self-connections")
-
-    plt.show()
+    if bias == True:
+        plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n added bias")
+    #plt.show()
 
 def task3_6():
     pass
@@ -436,10 +443,12 @@ def main(task):
     elif task == 4:
         task3_4()
     elif task == 5:
-        task3_5()
+        #task3_5()
         task3_5_random(noise_flag=False)
         task3_5_random()
         task3_5_random(remove_w_diagonal=True)
+        task3_5_random(noise_flag=False, bias=True)
+        plt.show()
     elif task == 6:
         task3_6()
 
