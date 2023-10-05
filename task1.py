@@ -48,6 +48,13 @@ def plot_energy(energy_list):
     plt.plot(x, energy_list)
     #plt.show()
 
+def calc_weight_sparse_patterns(input_patterns, average_activity):
+    # no scaling by 1/N
+    num_neurons = input_patterns[0].shape[0]    # 1024
+    weight_matrix = np.zeros((num_neurons, num_neurons))
+    for pattern_mu in input_patterns:
+        weight_matrix += np.outer(pattern_mu.T - average_activity, pattern_mu - average_activity)
+    return weight_matrix
 
 def calc_weight(input_patterns, normalize=False):
     # no scaling by 1/N
@@ -63,6 +70,11 @@ def calc_weight(input_patterns, normalize=False):
 
     return weight_matrix
 
+def update_rule_sparse_patterns(pattern, weight_matrix, bias):
+    updated_pattern = pattern.copy()
+    sign = np.sign(np.dot(weight_matrix, updated_pattern) - bias)
+    updated_pattern = 0.5 + 0.5 * sign
+    return updated_pattern.astype(float)
 
 def update_rule(pattern, weight_matrix):
     updated_pattern = pattern.copy()
@@ -108,12 +120,29 @@ def flip_bits_in_pattern(number_of_flips, pattern):
         new_pattern[i] = new_pattern[i]*(-1)
     return new_pattern
 
+def flip_bits_in_pattern_sparse_patterns(number_of_flips, pattern):
+    new_pattern = pattern.copy()
+    rand_ints = np.random.randint(0, len(pattern), number_of_flips)
+    for i in rand_ints:
+        new_pattern[i] = new_pattern[i] + 1
+    return new_pattern
+
 def random_array(n=1024):
     # Generate a random array of shape (n,) with values -1 or 1
     return np.random.choice([-1, 1], size=n)
 
-def random_array_w_bias(n=100 ):
+def random_array_w_bias(n=100):
     return np.sign(np.random.choice([-1, 1], size=n)+0.5)
+
+def calc_activity_average(patterns):
+    network_size = len(patterns[0])
+    number_of_patterns = len(patterns)
+    activity_average = 0
+    for pattern in patterns:
+        activity_average += np.sum(pattern)
+    activity_average = activity_average / number_of_patterns / network_size
+    return activity_average
+
 
 def calc_energy(weights, pattern):
     energy = 0
@@ -513,8 +542,58 @@ def task3_5_random(noise_flag=True, remove_w_diagonal=False, bias=False):
         plt.title("Memorization Hopfield network 100 nodes \n Random patterns \n added bias")
     #plt.show()
 
+
 def task3_6():
-    pass
+    sparsity_list = np.array([0.1, 0.05, 0.01])
+    for sparsity in sparsity_list:
+        bias_list = np.array([0.0, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 1.1, 1.5])#np.arange(0.1, 0.4, 0.1) #np.array([0.3])
+        network_size = 100#100
+        number_of_patterns = 300
+        patterns = []
+        number_of_flips = int(sparsity*network_size)
+        for i in range(number_of_patterns):
+            all_zero_pattern = np.zeros((network_size, ))
+            pattern = flip_bits_in_pattern_sparse_patterns(number_of_flips, all_zero_pattern)
+            #print("NR 1:s", len(pattern[pattern == 1]))
+            patterns.append(pattern)
+
+        storage_capacity = []
+        for bias in bias_list:
+            #for end in range(3, number_of_patterns+1):
+            storage_capacity_w_bias = []
+            for end in range(1, number_of_patterns+1):
+                max_iters = int(np.log(network_size))
+                x_patterns = [copy.deepcopy(patterns[i]) for i in range(end)]
+                average_activity = calc_activity_average(x_patterns)
+                count = 0
+                weight_matrix = calc_weight_sparse_patterns(x_patterns, average_activity)
+                for pattern in x_patterns:
+                    #print("NEW")
+                    #print("NR 1:s", len(pattern[pattern == 1]))
+                    recall = copy.deepcopy(pattern)
+                    for _ in range(max_iters):
+                        recall = update_rule_sparse_patterns(recall, weight_matrix, bias)
+                        #print("NR 1:s", len(recall[recall == 1]))
+                    diff = recall == pattern
+                    if np.array_equal(recall, pattern):
+                        count += 1
+                #print("COUNT", count/len(x_patterns))
+                storage_capacity_w_bias.append(count/len(x_patterns))
+            storage_capacity.append(storage_capacity_w_bias)
+        
+
+        x_axis = np.array(range(1, number_of_patterns+1))
+    
+        plt.figure()
+        for bias, y in enumerate(storage_capacity):
+            print(y)
+            plt.plot(np.array(x_axis), np.array(y), label = f"bias {bias_list[bias]}")
+        plt.title(f"Memorization Hopfield network 100 nodes \n bias \n sparsity = {sparsity}")
+        plt.xlabel("Number of patterns")
+        plt.ylabel("Number of memorized patterns")
+        plt.legend()
+    plt.show()
+    
 
 
 def main(task):
@@ -546,5 +625,5 @@ def main(task):
 
 
 
-main(4)
+main(6)
 
